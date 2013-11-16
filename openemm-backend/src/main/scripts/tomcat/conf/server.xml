@@ -42,7 +42,7 @@
 
     <Engine name="Catalina" defaultHost="OpenEMM">
       <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase"/>
-      <Host name="OpenEMM"  appBase="webapps-empty" autoDeploy="true" unpackWARs="false" xmlValidation="false" xmlNamespaceAware="false">
+      <Host name="OpenEMM"  appBase="webapps-empty" autoDeploy="true" unpackWARs="true" xmlValidation="false" xmlNamespaceAware="false">
         <Alias>localhost</Alias>
         <Valve className="org.apache.catalina.valves.FastCommonAccessLogValve"
                resolveHosts="false" directory="${catalina.base}/logs/access/" rotatable="true" buffered="true"
