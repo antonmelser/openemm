@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 
 ##################################################################################
@@ -20,9 +20,17 @@
 # the code written by AGNITAS AG are Copyright (c) 2007 AGNITAS AG. All Rights
 # Reserved.
 # 
-# Contributor(s): AGNITAS AG. 
+# Contributor(s): AGNITAS AG., Anton Melser
 ##################################################################################
 #
 . $HOME/bin/scripts/config.sh
 #
-exec $HOME/bin/scripts/softbounce.py
+if [ $# -eq 2 ]; then
+    bnccnt=$1
+    nbdays=$2
+else
+    bnccnt=7
+    nbdays=30
+fi
+
+exec $HOME/bin/scripts/softbounce.py --bnccnt $bnccnt --nbdays $nbdays
