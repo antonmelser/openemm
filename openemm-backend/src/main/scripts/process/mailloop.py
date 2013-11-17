@@ -36,6 +36,7 @@ for record in curs.query(mailloop):
     mailloopAddress = record[0]
 
 localFilename = agn.base + os.sep + 'conf' + os.sep + 'bav' + os.sep + 'bav.conf-local'
+data = []
 try:
     with open(localFilename, "r") as myfile:
         data = myfile.readlines()
@@ -58,4 +59,5 @@ try:
         for newmail in newmails:
             newfile.write(newmail + "\talias:" + mailloopAddress + "\n")
 except:
-    agn.die(s='Unable to write bav.conf-local file! Async bounces will NOT be correctly processed!"
+    agn.die(s='Unable to write bav.conf-local file! Async bounces will NOT be correctly processed!')
+
