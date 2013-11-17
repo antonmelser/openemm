@@ -3,4 +3,4 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 0 3 * * *       openemm     /bin/bash /home/openemm/bin/softbounce.sh 7 30
 
-30 * * * *      openemm     /bin/bash /home/openemm/bin/mailloops.sh
+30 * * * *      openemm     /bin/bash /home/openemm/bin/mailloop.sh
