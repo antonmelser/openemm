@@ -174,7 +174,7 @@
                 </html:select>
 
             </div>
-            <html:hidden property="companyID" value="1"/>
+            <html:hidden property="companyID" value="${sessionScope['emm.admin'].company.id}" />
         </div>
         <div class="blue_box_bottom"></div>
     </div>
