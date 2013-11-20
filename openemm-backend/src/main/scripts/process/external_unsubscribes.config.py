@@ -10,10 +10,10 @@ FILE_PROCESSED_EXTENSION = 'processed'
 # The file glob that should match your list-unsubscribe mailto files (i.e.,
 # those sent to your by the ISPs. There should be one email per file
 LISTUNSUB_MAILTO_GLOB = '/home/openemm/mailto-unsubs/*.msg'
-# The regex used to detect the file. The default value matches the pattern used
-# in the example in the default [headerManager] urimatrix for mailto. You MUST
-# use a python regex compatible expression and you MUST return a named group
-# <uidstr>
+# The regex used to detect the agnUID/mid in each file. The default value
+# matches the pattern used in the example in the default [headerManager]
+# urimatrix for mailto. You MUST use a python regex compatible expression
+# and you MUST return a named group <uidstr>
 LISTUNSUB_MAILTO_UIDSTR_REGEX = r"Delivered-To: DUNS-(?P<uidstr>.*)@"
 # The unsubscribe comment added to the mailinglist entry for the user
 LISTUNSUB_MAILTO_REMARK = 'List-unsubscribe mailto by user'
