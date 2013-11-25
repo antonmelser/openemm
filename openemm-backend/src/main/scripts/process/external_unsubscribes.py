@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # vim: set fileencoding=utf-8 :
 
-import re, os, glob, types, time, datetime, calendar, imp, argparse, sys
+import re, os, glob, types, datetime, calendar, imp, argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', help='Config file to process', dest='config')
@@ -10,11 +10,11 @@ args = parser.parse_args()
 if args.config:
     configfile = args.config
 else:
-    configfile = 'external_unsubscribes.config.py'
+    configfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external_unsubscribes.config.py')
 
 import agn
 
-config = imp.load_source('config', args.config)
+config = imp.load_source('config', configfile)
 
 from suds.client import Client
 from suds.wsse import *
@@ -103,8 +103,7 @@ def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column
                 i += 1
                 if (skip_first_line and i == 1) or line.strip() == '':  # don't look at headers
                     continue
-
-                email = line.split(separator)[email_column]
+                email = line.split(separator)[email_column - 1]
                 if not email is None and '@' in email:
                     blacklist_in_openemm(email)
                 else:
