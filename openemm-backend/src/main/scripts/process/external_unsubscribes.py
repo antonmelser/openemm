@@ -5,6 +5,7 @@ import re, os, glob, types, datetime, calendar, imp, argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', help='Config file to process', dest='config')
+
 args = parser.parse_args()
 
 if args.config:
@@ -16,12 +17,16 @@ import agn
 
 config = imp.load_source('config', configfile)
 
+if not config.FBL_COMPANY:
+    COMPANY_ID = 1
+else:
+    COMPANY_ID = config.FBL_COMPANY
+
 from suds.client import Client
 from suds.wsse import *
 
 MAILINGLISTS = {}
 COMPANYPASSWORDS = {}
-
 
 from base64 import b64encode
 
@@ -31,7 +36,6 @@ except:
     from sha import new as sha1
 
 
-# taken from https://gist.github.com/copitux/5029872
 class UsernameDigestToken(UsernameToken):
     """
     Represents a basic I{UsernameToken} WS-Security token with password digest
@@ -47,6 +51,7 @@ class UsernameDigestToken(UsernameToken):
     @doc: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0.pdf
     """
 
+    # taken from https://gist.github.com/copitux/5029872
     def __init__(self, username=None, password=None):
         UsernameToken.__init__(self, username, password)
         #self.setcreated()
@@ -95,20 +100,63 @@ class UsernameDigestToken(UsernameToken):
         return usernametoken
 
 
-def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column, skip_first_line):
+def get_company_ws_auth():
+    company_ws_auth = {}
+    try:
+        db = agn.DBase()
+        if not db is None:
+            cursor = db.cursor()
+            if not cursor is None:
+                for r in cursor.queryc('SELECT company_id, username, password FROM webservice_user_tbl'):
+                    company_ws_auth[r[0]] = [r[1], r[2]]
+                cursor.close()
+            else:
+                agn.log(agn.LV_ERROR, 'company_ws_auth', 'Unable to get databse cursor')
+            db.close()
+        else:
+            agn.log(agn.LV_ERROR, 'company_ws_auth', 'Unable to create database')
+    except agn.error, e:
+        agn.log(agn.LV_ERROR, 'company_ws_auth', 'Failed: ' + e.msg)
+
+    if len(company_ws_auth) == 0:
+        agn.log(agn.LV_ERROR, 'company_ws_auth', 'There are no WSv2 users defined in the database')
+    else:
+        agn.log(agn.LV_INFO, 'company_ws_auth', 'Found %s company WS users' % len(company_ws_auth))
+
+    return company_ws_auth
+
+
+def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column, uid_column, skip_first_line,
+                                uidstr_regex):
     try:
         i = 0
+        reg = re.compile(uidstr_regex)
         with open(filepath, "r") as myfile:
             for line in myfile:
                 i += 1
                 if (skip_first_line and i == 1) or line.strip() == '':  # don't look at headers
                     continue
+                uid = None
                 email = line.split(separator)[email_column - 1]
-                if not email is None and '@' in email:
-                    blacklist_in_openemm(email)
+                if COMPANY_ID == 'ALL':
+                    company_ws_auth_to_blacklist = COMPANY_WS_AUTH.keys()
+                elif uid_column:
+                    uid = line.split(separator)[uid_column]
+                    m = reg.search(line)
+                    if not m is None:
+                        uidstr = m.group("uidstr")
+                        if not uidstr is None:
+                            uid = __scanUID(uidstr)
+                            company_ws_auth_to_blacklist = [uid.companyID]
                 else:
-                    agn.log(agn.LV_WARNING, 'blacklisting', 'Unable to parse email from line: ' + str(i)
-                            + '. Line contents: ' + line)
+                    company_ws_auth_to_blacklist = [COMPANY_ID]
+
+                for company in company_ws_auth_to_blacklist:
+                    if not email is None and '@' in email:
+                        blacklist_in_openemm(email, company)
+                    else:
+                        agn.log(agn.LV_WARNING, 'blacklisting', 'Unable to parse email from line: ' + str(i)
+                                + '. Line contents: ' + line)
 
             # we don't really need the timestamp here either
             os.rename(filepath, filepath + '.' + str(calendar.timegm(
@@ -141,10 +189,10 @@ def process_listunsubscribe_mailto(filepath, processed_ext, uidstr_regex, remark
                 + ' for list-unsub mailto. Exception: ' + ex.message)
 
 
-def blacklist_in_openemm(email):
+def blacklist_in_openemm(email, company_id):
     wsclient = Client(config.WSDL_URL)
     security = Security()
-    token = UsernameDigestToken(config.WSSE_USERNAME, config.WSSE_PASSWORD)
+    token = UsernameDigestToken(COMPANY_WS_AUTH[company_id][0], COMPANY_WS_AUTH[company_id][1])
     security.tokens.append(token)
     wsclient.set_options(wsse=security)
     try:
@@ -157,7 +205,7 @@ def blacklist_in_openemm(email):
 def unsub_from_openemm(uid, remark):
     wsclient = Client(config.WSDL_URL)
     security = Security()
-    token = UsernameDigestToken(config.WSSE_USERNAME, config.WSSE_PASSWORD)
+    token = UsernameDigestToken(COMPANY_WS_AUTH[uid.companyID][0], COMPANY_WS_AUTH[uid.companyID][1])
     security.tokens.append(token)
     wsclient.set_options(wsse=security)
     media_type = 0  # email, would be 4 for SMS
@@ -230,10 +278,13 @@ def __scanUID (uidstr):
     return uid
 
 
+COMPANY_WS_AUTH = get_company_ws_auth()
+
 for afile in glob.glob(config.LISTUNSUB_MAILTO_GLOB):
     process_listunsubscribe_mailto(afile, config.FILE_PROCESSED_EXTENSION, config.LISTUNSUB_MAILTO_UIDSTR_REGEX,
                                    config.LISTUNSUB_MAILTO_REMARK)
 
 for afile in glob.glob(config.FBL_ACCOUNTING_GLOB):
     process_listunsubscribe_fbl(afile, config.FILE_PROCESSED_EXTENSION, config.FBL_LINE_SEPARATOR,
-                                config.FBL_LINE_EMAIL_COLUMN, config.FBL_SKIP_FIRST_LINE)
+                                config.FBL_LINE_EMAIL_COLUMN, config.FBL_LINE_UID_COLUMN, config.FBL_SKIP_FIRST_LINE,
+                                config.FBL_UIDSTR_REGEX)
