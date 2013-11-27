@@ -192,7 +192,7 @@ def process_listunsubscribe_mailto(filepath, processed_ext, uidstr_regex, remark
 def blacklist_in_openemm(email, company_id):
     wsclient = Client(config.WSDL_URL)
     security = Security()
-    token = UsernameDigestToken(COMPANY_WS_AUTH[company_id][0], COMPANY_WS_AUTH[company_id][1])
+    token = UsernameDigestToken(COMPANY_WS_AUTH[int(company_id)][0], COMPANY_WS_AUTH[int(company_id)][1])
     security.tokens.append(token)
     wsclient.set_options(wsse=security)
     try:
