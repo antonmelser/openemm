@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # vim: set fileencoding=utf-8 :
 
-import re, os, glob, types, datetime, calendar, imp, argparse
+import re, os, glob, types, calendar, imp, argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', help='Config file to process', dest='config')
@@ -34,6 +34,8 @@ try:
     from haslib import sha1
 except:
     from sha import new as sha1
+
+import datetime
 
 
 class UsernameDigestToken(UsernameToken):
@@ -141,8 +143,8 @@ def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column
                 if COMPANY_ID == 'ALL':
                     company_ws_auth_to_blacklist = COMPANY_WS_AUTH.keys()
                 elif uid_column:
-                    uid = line.split(separator)[int(uid_column)]
-                    m = reg.search(line)
+                    uid = line.split(separator)[int(uid_column) - 1]
+                    m = reg.search(uid)
                     if not m is None:
                         uidstr = m.group("uidstr")
                         if not uidstr is None:
@@ -160,7 +162,7 @@ def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column
 
             # we don't really need the timestamp here either
             os.rename(filepath, filepath + '.' + str(calendar.timegm(
-                datetime.now().utctimetuple())) + '.' + processed_ext)
+                datetime.datetime.now().utctimetuple())) + '.' + processed_ext)
     except Exception as ex:
         agn.log(agn.LV_ERROR, 'blacklisting', 'Error processing file ' + filepath + ' to blacklist. Exception: '
                 + ex.message)
@@ -183,7 +185,7 @@ def process_listunsubscribe_mailto(filepath, processed_ext, uidstr_regex, remark
 
         # we don't strictly need the timestamp here
         os.rename(filepath, filepath + '.' + str(calendar.timegm(
-            datetime.now().utctimetuple())) + '.' + processed_ext)
+            datetime.datetime.now().utctimetuple())) + '.' + processed_ext)
     except Exception as ex:
         agn.log(agn.LV_ERROR, 'list-unsubscribe', 'Error processing file ' + filepath
                 + ' for list-unsub mailto. Exception: ' + ex.message)
