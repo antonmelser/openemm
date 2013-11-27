@@ -137,11 +137,11 @@ def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column
                 if (skip_first_line and i == 1) or line.strip() == '':  # don't look at headers
                     continue
                 uid = None
-                email = line.split(separator)[email_column - 1]
+                email = line.split(separator)[int(email_column) - 1]
                 if COMPANY_ID == 'ALL':
                     company_ws_auth_to_blacklist = COMPANY_WS_AUTH.keys()
                 elif uid_column:
-                    uid = line.split(separator)[uid_column]
+                    uid = line.split(separator)[int(uid_column)]
                     m = reg.search(line)
                     if not m is None:
                         uidstr = m.group("uidstr")
@@ -149,7 +149,7 @@ def process_listunsubscribe_fbl(filepath, processed_ext, separator, email_column
                             uid = __scanUID(uidstr)
                             company_ws_auth_to_blacklist = [uid.companyID]
                 else:
-                    company_ws_auth_to_blacklist = [COMPANY_ID]
+                    company_ws_auth_to_blacklist = [int(COMPANY_ID)]
 
                 for company in company_ws_auth_to_blacklist:
                     if not email is None and '@' in email:
