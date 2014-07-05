@@ -1,3 +1,7 @@
-syntax: glob
-*/target/*
-*/build/*
+syntax: regexp
+.*/target/.*
+.*/build/.*
+.*.swp
+.*.swo
+.*/logs/.*
+^openemm/etc/dev\.properties$
